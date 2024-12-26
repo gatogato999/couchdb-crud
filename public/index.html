@@ -1,0 +1,150 @@
+<!-- filepath: /e:/githubprojs/couchdb-crud/public/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>couchDB CRUD Operations with nodejs</title>
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    table, th, td {
+      border: 1px solid black;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <h1>CRUD Operations</h1>
+  <div>
+    <h2>Create Document</h2>
+    <form id="createForm">
+      <input type="text" id="createName" placeholder="Name" required>
+      <input type="number" id="createAge" placeholder="Age" required>
+      <button type="submit">Create</button>
+    </form>
+  </div>
+  <!-- TODO i need to remove this  -->
+  <div>
+    <h2>Read Document</h2>
+    <form id="readForm">
+      <input type="text" id="readId" placeholder="Document ID" required>
+      <button type="submit">Read</button>
+    </form>
+    <pre id="readResult"></pre>
+  </div>
+  
+  
+  <div>
+      <h2>Update Document</h2>
+      <form id="updateForm">
+          <input type="text" id="updateId" placeholder="Document ID" required>
+          <input type="text" id="updateName" placeholder="New Name">
+          <input type="number" id="updateAge" placeholder="New Age" >
+          <button type="submit">Update</button>
+        </form>
+    </div>
+    <div>
+        <h2>Delete Document</h2>
+        <form id="deleteForm">
+            <input type="text" id="deleteId" placeholder="Document ID" required>
+            <button type="submit">Delete</button>
+        </form>
+    </div>
+    <h2>All Documents</h2>
+    <table id="allDocsTable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Age</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Rows will be added here dynamically -->
+      </tbody>
+    </table>
+    </div>
+    <script>
+        document.getElementById('createForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+      const name = document.getElementById('createName').value;
+      const age = document.getElementById('createAge').value;
+      const response = await fetch('/c', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, age })
+      });
+      const result = await response.json();
+      alert('Document created: ' + JSON.stringify(result));
+      
+    fetchAllDocuments();
+    });
+
+    document.getElementById('readForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('readId').value;
+      const response = await fetch(`/r/${id}`);
+      const result = await response.json();
+      document.getElementById('readResult').textContent = JSON.stringify(result, null, 2);
+     
+    fetchAllDocuments();
+    });
+
+    document.getElementById('updateForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('updateId').value;
+      const name = document.getElementById('updateName').value;
+      const age = document.getElementById('updateAge').value;
+      const updatedFields = {};
+      if (name) updatedFields.name = name;
+      if (age) updatedFields.age = age;
+      const response = await fetch(`/u/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        // body: JSON.stringify({ age })
+        body: JSON.stringify(updatedFields)
+      });
+      const result = await response.json();
+      alert('Document updated: ' + JSON.stringify(result));
+     
+    fetchAllDocuments();
+    });
+
+    document.getElementById('deleteForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('deleteId').value;
+      const response = await fetch(`/d/${id}`, { method: 'DELETE' });
+      const result = await response.json();
+      alert('Document deleted: ' + JSON.stringify(result));
+  
+    fetchAllDocuments();
+    });
+    
+    async function fetchAllDocuments() {
+      const response = await fetch('/read-all');
+      const result = await response.json();
+      const tableBody = document.getElementById('allDocsTable').getElementsByTagName('tbody')[0];
+      tableBody.innerHTML = ''; // Clear existing rows
+      result.forEach(doc => {
+        const row = tableBody.insertRow();
+        const cellId = row.insertCell(0);
+        const cellName = row.insertCell(1);
+        const cellAge = row.insertCell(2);
+        cellId.textContent = doc._id;
+        cellName.textContent = doc.name;
+        cellAge.textContent = doc.age;
+      });
+    }
+    
+
+    // Fetch all documents on page load
+    window.onload = fetchAllDocuments;
+  </script>
+</body>
+</html>
